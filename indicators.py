@@ -41,17 +41,40 @@ def _fred_latest(series_id: str, api_key: str, units: str = None):
         return None
 
 
-def fed_funds_rate(api_key: str):
-    """연준 기준금리 목표범위, 예: '3.50~3.75'. 실패 시 None."""
-    lower = _fred_latest("DFEDTARL", api_key)
-    upper = _fred_latest("DFEDTARU", api_key)
-    if lower is None or upper is None:
+def _fred_change(series_id: str, api_key: str):
+    """(최신값, 직전 관측치 대비 변화율%) 반환. 실패 시 None."""
+    try:
+        params = {
+            "series_id": series_id,
+            "api_key": api_key,
+            "file_type": "json",
+            "sort_order": "desc",
+            "limit": 2,
+        }
+        resp = requests.get(FRED_URL, params=params, timeout=10)
+        resp.raise_for_status()
+        obs = resp.json()["observations"]
+        latest = float(obs[0]["value"])
+        prev = float(obs[1]["value"])
+        pct = (latest - prev) / prev * 100 if prev else 0.0
+        return round(latest, 2), round(pct, 2)
+    except Exception:
         return None
-    return f"{lower}~{upper}"
+
+
+def fed_funds_rate(api_key: str):
+    """(연준 기준금리 목표범위 문자열 '3.5~3.75', 상단 기준 전일 대비 변화율%). 실패 시 None."""
+    lower = _fred_latest("DFEDTARL", api_key)
+    upper_change = _fred_change("DFEDTARU", api_key)
+    if lower is None or upper_change is None:
+        return None
+    upper, pct = upper_change
+    return f"{lower}~{upper}", pct
 
 
 def us10y_yield(api_key: str):
-    return _fred_latest("DGS10", api_key)
+    """(미10년물 금리%, 전일 대비 변화율%). 실패 시 None."""
+    return _fred_change("DGS10", api_key)
 
 
 def unemployment_rate(api_key: str):
