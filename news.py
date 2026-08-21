@@ -14,6 +14,10 @@ FEEDS_BY_CATEGORY = {
         "https://www.coindesk.com/arc/outboundfeeds/rss/",
         "https://cointelegraph.com/rss",
     ],
+    "tesla": [
+        "https://www.teslarati.com/feed/",
+        "https://electrek.co/guides/tesla/feed/",
+    ],
 }
 
 

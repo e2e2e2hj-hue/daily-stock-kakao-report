@@ -40,7 +40,7 @@ def collect_indicators(fred_key: str) -> dict:
 def collect_news_summaries(gemini_key: str) -> dict:
     start_utc, end_utc = news.get_window_utc()
     summaries = {}
-    for category in ("macro", "us_market", "bitcoin"):
+    for category in ("macro", "us_market", "bitcoin", "tesla"):
         items = news.fetch_category_items(category, start_utc, end_utc)
         summaries[category] = summarize.summarize_category(category, items, gemini_key)
     return summaries

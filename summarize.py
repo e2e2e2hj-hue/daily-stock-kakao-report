@@ -10,6 +10,7 @@ CATEGORY_LABELS = {
     "macro": "거시경제",
     "us_market": "미국 증시",
     "bitcoin": "비트코인",
+    "tesla": "테슬라",
 }
 
 

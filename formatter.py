@@ -47,6 +47,7 @@ def build_messages(today_str: str, ind: dict, news: dict) -> list:
 
     msg4 = news.get("us_market", "")
     msg5 = news.get("bitcoin", "")
-    msg6 = news.get("macro", "")
+    msg6 = news.get("tesla", "")
+    msg7 = news.get("macro", "")
 
-    return [msg1, msg2, msg3, msg4, msg5, msg6]
+    return [msg1, msg2, msg3, msg4, msg5, msg6, msg7]
