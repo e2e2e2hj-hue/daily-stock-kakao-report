@@ -37,6 +37,9 @@ class _CallbackHandler(BaseHTTPRequestHandler):
 def main():
     load_dotenv()
     rest_api_key = os.environ.get("KAKAO_REST_API_KEY") or input("카카오 REST API 키 입력: ").strip()
+    client_secret = os.environ.get("KAKAO_CLIENT_SECRET") or input(
+        "Client Secret (보안 미사용이면 그냥 엔터): "
+    ).strip()
 
     auth_url = (
         f"{AUTHORIZE_URL}?client_id={rest_api_key}"
@@ -53,22 +56,25 @@ def main():
         print("인증 코드를 받지 못했습니다. 다시 시도해주세요.")
         return
 
-    resp = requests.post(
-        TOKEN_URL,
-        data={
-            "grant_type": "authorization_code",
-            "client_id": rest_api_key,
-            "redirect_uri": REDIRECT_URI,
-            "code": code,
-        },
-        timeout=10,
-    )
-    resp.raise_for_status()
+    data = {
+        "grant_type": "authorization_code",
+        "client_id": rest_api_key,
+        "redirect_uri": REDIRECT_URI,
+        "code": code,
+    }
+    if client_secret:
+        data["client_secret"] = client_secret
+    resp = requests.post(TOKEN_URL, data=data, timeout=10)
+    if resp.status_code != 200:
+        print(f"토큰 교환 실패: {resp.status_code} {resp.text}")
+        return
     tokens = resp.json()
 
     print("\n인증 성공. 아래 값을 GitHub repo Settings > Secrets and variables > Actions 에 등록하세요.")
     print(f"KAKAO_REST_API_KEY = {rest_api_key}")
     print(f"KAKAO_REFRESH_TOKEN = {tokens['refresh_token']}")
+    if client_secret:
+        print(f"KAKAO_CLIENT_SECRET = {client_secret}")
 
 
 if __name__ == "__main__":

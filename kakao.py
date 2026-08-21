@@ -8,17 +8,16 @@ SEND_URL = "https://kapi.kakao.com/v2/api/talk/memo/default/send"
 LINK_URL = "https://finance.naver.com/sise/"  # 카카오 text 템플릿은 link 필드가 필수라 고정 URL 사용
 
 
-def refresh_access_token(rest_api_key: str, refresh_token: str) -> dict:
+def refresh_access_token(rest_api_key: str, refresh_token: str, client_secret: str = None) -> dict:
     """access_token을 갱신한다. 응답에 refresh_token이 포함되면 회전된 것이므로 호출자가 저장해야 한다."""
-    resp = requests.post(
-        TOKEN_URL,
-        data={
-            "grant_type": "refresh_token",
-            "client_id": rest_api_key,
-            "refresh_token": refresh_token,
-        },
-        timeout=10,
-    )
+    data = {
+        "grant_type": "refresh_token",
+        "client_id": rest_api_key,
+        "refresh_token": refresh_token,
+    }
+    if client_secret:
+        data["client_secret"] = client_secret
+    resp = requests.post(TOKEN_URL, data=data, timeout=10)
     resp.raise_for_status()
     return resp.json()
 

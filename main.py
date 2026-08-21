@@ -69,8 +69,9 @@ def main():
 
     rest_api_key = os.environ["KAKAO_REST_API_KEY"]
     refresh_token = os.environ["KAKAO_REFRESH_TOKEN"]
+    client_secret = os.environ.get("KAKAO_CLIENT_SECRET")
 
-    token_data = kakao.refresh_access_token(rest_api_key, refresh_token)
+    token_data = kakao.refresh_access_token(rest_api_key, refresh_token, client_secret)
     access_token = token_data["access_token"]
 
     for m in messages:
