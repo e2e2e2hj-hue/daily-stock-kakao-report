@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 
 import calendar_events
+import earnings
 import formatter
 import indicators
 import kakao
@@ -37,13 +38,24 @@ def collect_indicators(fred_key: str) -> dict:
     }
 
 
-def collect_news_summaries(gemini_key: str) -> dict:
-    start_utc, end_utc = news.get_window_utc()
+def collect_news_summaries(start_utc, end_utc, gemini_key: str) -> dict:
     summaries = {}
     for category in ("macro", "us_market", "bitcoin", "tesla"):
         items = news.fetch_category_items(category, start_utc, end_utc)
         summaries[category] = summarize.summarize_category(category, items, gemini_key)
     return summaries
+
+
+def collect_earnings(start_utc, end_utc, gemini_key: str) -> list:
+    """윈도우 내에 실적을 발표한 관심 기업들의 재무 수치 + 컨퍼런스콜 요약을 수집."""
+    result = []
+    for ticker in earnings.find_recent_earnings(start_utc, end_utc):
+        name = earnings.TRACKED[ticker]
+        financials = earnings.get_financials(ticker)
+        call_items = earnings.fetch_call_coverage(name, ticker, start_utc, end_utc)
+        call_summary = summarize.summarize_earnings_call(name, call_items, gemini_key)
+        result.append({"name": name, "financials": financials, "call_summary": call_summary})
+    return result
 
 
 def main():
@@ -56,9 +68,11 @@ def main():
     gemini_key = os.environ.get("GEMINI_API_KEY", "")
 
     today_str = datetime.now(KST).strftime("%Y-%m-%d")
+    start_utc, end_utc = news.get_window_utc()
     ind = collect_indicators(fred_key)
-    news_summaries = collect_news_summaries(gemini_key)
-    messages = formatter.build_messages(today_str, ind, news_summaries)
+    news_summaries = collect_news_summaries(start_utc, end_utc, gemini_key)
+    earnings_reports = collect_earnings(start_utc, end_utc, gemini_key)
+    messages = formatter.build_messages(today_str, ind, news_summaries, earnings_reports)
 
     if args.dry_run:
         for i, m in enumerate(messages, 1):

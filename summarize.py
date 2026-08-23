@@ -24,28 +24,52 @@ def summarize_category(category: str, items: list, api_key: str) -> str:
     if not items:
         return "최근 24시간 내 주요 뉴스가 확인되지 않았습니다."
     if api_key:
-        result = _summarize_with_gemini(label, items, api_key)
+        prompt = (
+            f"다음은 최근 24시간 동안의 '{label}' 관련 뉴스 헤드라인들이다(영문 원문 포함 가능).\n"
+            f"{_headlines_block(items)}\n\n"
+            f"반드시 한국어로만, 장기투자자 관점에서 중요한 내용을 3~5개 항목으로 정리해줘. "
+            f"정보를 생략하지 말되, 각 항목은 완전한 문장이 아니라 '사업 영역 확대', "
+            f"'금리 동결 시사'처럼 핵심만 압축한 명사형 구절로 짧게 써줘. "
+            f"각 항목 앞에 '- '를 붙이고, 불필요한 수식어나 인사말은 넣지 마."
+        )
+        result = _call_gemini(prompt, api_key)
         if result:
             return result
     return _fallback_headlines(items)
 
 
-def _summarize_with_gemini(label: str, items: list, api_key: str, attempts: int = 3):
-    headlines = "\n".join(f"- {i['title']}: {i['summary']}" for i in items)
-    prompt = (
-        f"다음은 최근 24시간 동안의 '{label}' 관련 뉴스 헤드라인들이다(영문 원문 포함 가능).\n{headlines}\n\n"
-        f"반드시 한국어로만, 장기투자자 관점에서 중요한 내용을 3~5개 항목으로 정리해줘. "
-        f"정보를 생략하지 말되, 각 항목은 완전한 문장이 아니라 '사업 영역 확대', "
-        f"'금리 동결 시사'처럼 핵심만 압축한 명사형 구절로 짧게 써줘. "
-        f"각 항목 앞에 '- '를 붙이고, 불필요한 수식어나 인사말은 넣지 마."
-    )
+def summarize_earnings_call(company_name: str, items: list, api_key: str) -> str:
+    """실적 발표 컨퍼런스콜(설명회) 보도를 A4 반페이지 수준으로 압축 요약."""
+    if not items:
+        return "관련 컨퍼런스콜 보도가 확인되지 않았습니다."
+    if api_key:
+        prompt = (
+            f"다음은 '{company_name}'의 최근 분기 실적 발표 및 컨퍼런스콜(실적 설명회) 관련 "
+            f"뉴스 보도들이다(영문 원문 포함 가능).\n{_headlines_block(items)}\n\n"
+            f"반드시 한국어로만, 장기투자자 관점에서 중요한 내용을 A4 반페이지 분량 수준으로 "
+            f"압축 정리해줘(대략 10~15개 항목). 실적 하이라이트, 향후 가이던스, 경영진 코멘트, "
+            f"주요 리스크·이슈, 애널리스트 질의응답에서 나온 핵심 내용을 최대한 담아줘. "
+            f"정보를 생략하지 말되, 각 항목은 완전한 문장이 아니라 명사형 구절로 압축해서 짧게 써줘. "
+            f"각 항목 앞에 '- '를 붙이고, 불필요한 수식어나 인사말은 넣지 마."
+        )
+        result = _call_gemini(prompt, api_key)
+        if result:
+            return result
+    return _fallback_headlines(items)
+
+
+def _headlines_block(items: list) -> str:
+    return "\n".join(f"- {i['title']}: {i['summary']}" for i in items)
+
+
+def _call_gemini(prompt: str, api_key: str, attempts: int = 3):
     for attempt in range(attempts):
         try:
             resp = requests.post(
                 GEMINI_URL,
                 params={"key": api_key},
                 json={"contents": [{"parts": [{"text": prompt}]}]},
-                timeout=20,
+                timeout=30,
             )
             resp.raise_for_status()
             data = resp.json()

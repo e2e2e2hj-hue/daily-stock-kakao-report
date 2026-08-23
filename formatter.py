@@ -1,4 +1,4 @@
-"""수집된 지표/뉴스 요약을 카카오 텍스트 메시지(각 200자 이하)로 조립.
+"""수집된 지표/뉴스/실적 요약을 카카오 텍스트 메시지(각 200자 이하)로 조립.
 메시지마다 맨 위에 '■주제' 헤더를 붙이고, 내용이 200자를 넘으면 잘라내는 대신
 같은 주제의 메시지를 여러 통(2/2, 3/3 ...)으로 이어서 보낸다.
 """
@@ -28,15 +28,30 @@ def _num(val, unit=""):
     return f"{val}{unit}"
 
 
-def _pack_lines(header: str, lines: list) -> list:
+def _usd_billions(val):
+    if val is None:
+        return "조회실패"
+    sign = "-" if val < 0 else ""
+    return f"{sign}${abs(val) / 1e9:.1f}B"
+
+
+def _usd(val):
+    if val is None:
+        return "조회실패"
+    return f"${val:.2f}"
+
+
+def pack_lines(header: str, lines: list) -> list:
     """header + lines를 MAX_LEN 이하 메시지 여러 개로 나눈다. 넘치면 헤더를 반복해
-    다음 메시지로 이어 보낸다(한 줄 자체가 헤더와 합쳐도 넘치는 극단적인 경우는 예외)."""
+    다음 메시지로 이어 보낸다(한 줄 자체가 헤더와 합쳐도 넘치는 극단적인 경우는 예외).
+    나중에 붙는 '(N/M)' 접미사 자리를 남겨두기 위해 여유분을 두고 나눈다."""
+    budget = MAX_LEN - 10
     chunks = [[header]]
     for line in lines:
         if not line:
             continue
         current = chunks[-1]
-        if len("\n".join(current + [line])) > MAX_LEN and len(current) > 1:
+        if len("\n".join(current + [line])) > budget and len(current) > 1:
             chunks.append([header])
             current = chunks[-1]
         current.append(line)
@@ -49,10 +64,10 @@ def _pack_lines(header: str, lines: list) -> list:
     return result
 
 
-def build_messages(today_str: str, ind: dict, news: dict) -> list:
+def build_messages(today_str: str, ind: dict, news: dict, earnings: list = None) -> list:
     messages = []
 
-    messages += _pack_lines(
+    messages += pack_lines(
         f"■일일시황 {today_str}",
         [
             f"코스피 {_price(ind.get('kospi'))}",
@@ -65,7 +80,7 @@ def build_messages(today_str: str, ind: dict, news: dict) -> list:
         ],
     )
 
-    messages += _pack_lines(
+    messages += pack_lines(
         "■원자재·암호화폐",
         [
             f"금 {_price(ind.get('gold'))}",
@@ -76,7 +91,7 @@ def build_messages(today_str: str, ind: dict, news: dict) -> list:
         ],
     )
 
-    messages += _pack_lines(
+    messages += pack_lines(
         "■물가·고용",
         [
             f"CPI(YoY) {_num(ind.get('cpi'), '%')}",
@@ -94,6 +109,23 @@ def build_messages(today_str: str, ind: dict, news: dict) -> list:
     for key, header in news_sections:
         body = news.get(key, "")
         lines = body.split("\n") if body else ["관련 뉴스 없음"]
-        messages += _pack_lines(header, lines)
+        messages += pack_lines(header, lines)
+
+    for e in earnings or []:
+        name = e["name"]
+        fin = e.get("financials") or {}
+        messages += pack_lines(
+            f"■{name} 실적발표",
+            [
+                f"매출 {_usd_billions(fin.get('revenue'))}",
+                f"영업이익 {_usd_billions(fin.get('op_income'))}",
+                f"순이익 {_usd_billions(fin.get('net_income'))}",
+                f"EPS 실제 {_usd(fin.get('eps_actual'))} / 예상 {_usd(fin.get('eps_estimate'))}",
+                f"총부채 {_usd_billions(fin.get('debt'))}",
+            ],
+        )
+        call_summary = e.get("call_summary", "")
+        call_lines = call_summary.split("\n") if call_summary else ["컨퍼런스콜 관련 보도 없음"]
+        messages += pack_lines(f"■{name} 컨퍼런스콜 요약", call_lines)
 
     return messages
