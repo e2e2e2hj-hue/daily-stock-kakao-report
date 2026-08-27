@@ -114,10 +114,14 @@ def build_messages(today_str: str, ind: dict, news: dict, earnings: list = None)
     for e in earnings or []:
         name = e["name"]
         fin = e.get("financials") or {}
+        verdict = e.get("revenue_verdict", "정보없음")
+        revenue_line = f"매출 {_usd_billions(fin.get('revenue'))}"
+        if verdict in ("상회", "하회"):
+            revenue_line += f" (예상치 {verdict})"
         messages += pack_lines(
             f"■{name} 실적발표",
             [
-                f"매출 {_usd_billions(fin.get('revenue'))}",
+                revenue_line,
                 f"영업이익 {_usd_billions(fin.get('op_income'))}",
                 f"순이익 {_usd_billions(fin.get('net_income'))}",
                 f"EPS 실제 {_usd(fin.get('eps_actual'))} / 예상 {_usd(fin.get('eps_estimate'))}",

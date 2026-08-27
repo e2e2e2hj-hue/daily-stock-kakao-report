@@ -54,7 +54,15 @@ def collect_earnings(start_utc, end_utc, gemini_key: str) -> list:
         financials = earnings.get_financials(ticker)
         call_items = earnings.fetch_call_coverage(name, ticker, start_utc, end_utc)
         call_summary = summarize.summarize_earnings_call(name, call_items, gemini_key)
-        result.append({"name": name, "financials": financials, "call_summary": call_summary})
+        revenue_verdict = summarize.extract_revenue_verdict(name, call_items, gemini_key)
+        result.append(
+            {
+                "name": name,
+                "financials": financials,
+                "call_summary": call_summary,
+                "revenue_verdict": revenue_verdict,
+            }
+        )
     return result
 
 

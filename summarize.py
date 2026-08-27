@@ -58,6 +58,26 @@ def summarize_earnings_call(company_name: str, items: list, api_key: str) -> str
     return _fallback_headlines(items)
 
 
+def extract_revenue_verdict(company_name: str, items: list, api_key: str) -> str:
+    """뉴스 보도에서 매출이 시장 예상치(컨센서스)를 상회/하회했는지 판단.
+    정확한 예상 수치는 매칭이 어려워 '상회'/'하회'/'정보없음'으로만 반환한다."""
+    if not items or not api_key:
+        return "정보없음"
+    prompt = (
+        f"다음은 '{company_name}'의 최근 분기 실적 발표 관련 뉴스 보도다.\n{_headlines_block(items)}\n\n"
+        f"이 보도들에서 매출(revenue)이 시장 예상치(컨센서스)를 상회했는지 하회했는지 "
+        f"명시적으로 언급되어 있으면 '상회' 또는 '하회' 한 단어로만 답해줘. "
+        f"명확히 언급되어 있지 않으면 '정보없음' 한 단어로만 답해줘. 다른 설명은 절대 붙이지 마."
+    )
+    result = _call_gemini(prompt, api_key, attempts=2)
+    if result:
+        if "상회" in result:
+            return "상회"
+        if "하회" in result:
+            return "하회"
+    return "정보없음"
+
+
 def _headlines_block(items: list) -> str:
     return "\n".join(f"- {i['title']}: {i['summary']}" for i in items)
 
