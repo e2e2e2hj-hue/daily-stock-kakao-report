@@ -1,0 +1,11 @@
+{
+  "name": "주식 일일 시황",
+  "short_name": "일일시황",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f0f1a",
+  "theme_color": "#1a1a2e",
+  "icons": [
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

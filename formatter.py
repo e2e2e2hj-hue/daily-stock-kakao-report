@@ -6,7 +6,7 @@
 MAX_LEN = 200
 
 
-def _price(quote):
+def fmt_price(quote):
     if quote is None:
         return "조회실패"
     val, pct = quote
@@ -14,7 +14,7 @@ def _price(quote):
     return f"{val:,} ({sign}{pct}%)"
 
 
-def _rate(pair, unit="%"):
+def fmt_rate(pair, unit="%"):
     if pair is None:
         return "조회실패"
     val, pct = pair
@@ -22,20 +22,20 @@ def _rate(pair, unit="%"):
     return f"{val}{unit} ({sign}{pct}%)"
 
 
-def _num(val, unit=""):
+def fmt_num(val, unit=""):
     if val is None:
         return "조회실패"
     return f"{val}{unit}"
 
 
-def _usd_billions(val):
+def fmt_usd_billions(val):
     if val is None:
         return "조회실패"
     sign = "-" if val < 0 else ""
     return f"{sign}${abs(val) / 1e9:.1f}B"
 
 
-def _usd(val):
+def fmt_usd(val):
     if val is None:
         return "조회실패"
     return f"${val:.2f}"
@@ -70,23 +70,23 @@ def build_messages(today_str: str, ind: dict, news: dict, earnings: list = None)
     messages += pack_lines(
         f"■일일시황 {today_str}",
         [
-            f"코스피 {_price(ind.get('kospi'))}",
-            f"코스닥 {_price(ind.get('kosdaq'))}",
-            f"S&P500 {_price(ind.get('sp500'))}",
-            f"나스닥 {_price(ind.get('nasdaq'))}",
-            f"연준금리 {_rate(ind.get('fed_rate'))}",
-            f"美10년물 {_rate(ind.get('us10y'))}",
-            f"원/달러 {_price(ind.get('usdkrw'))}",
+            f"코스피 {fmt_price(ind.get('kospi'))}",
+            f"코스닥 {fmt_price(ind.get('kosdaq'))}",
+            f"S&P500 {fmt_price(ind.get('sp500'))}",
+            f"나스닥 {fmt_price(ind.get('nasdaq'))}",
+            f"연준금리 {fmt_rate(ind.get('fed_rate'))}",
+            f"美10년물 {fmt_rate(ind.get('us10y'))}",
+            f"원/달러 {fmt_price(ind.get('usdkrw'))}",
         ],
     )
 
     messages += pack_lines(
         "■원자재·암호화폐",
         [
-            f"금 {_price(ind.get('gold'))}",
-            f"비트코인 {_price(ind.get('btc'))}",
-            f"이더리움 {_price(ind.get('eth'))}",
-            f"솔라나 {_price(ind.get('sol'))}",
+            f"금 {fmt_price(ind.get('gold'))}",
+            f"비트코인 {fmt_price(ind.get('btc'))}",
+            f"이더리움 {fmt_price(ind.get('eth'))}",
+            f"솔라나 {fmt_price(ind.get('sol'))}",
             f"다음 FOMC: {ind.get('fomc_next', '정보없음')}",
         ],
     )
@@ -94,9 +94,9 @@ def build_messages(today_str: str, ind: dict, news: dict, earnings: list = None)
     messages += pack_lines(
         "■물가·고용",
         [
-            f"CPI(YoY) {_num(ind.get('cpi'), '%')}",
-            f"PPI(YoY) {_num(ind.get('ppi'), '%')}",
-            f"실업률 {_num(ind.get('unemployment'), '%')}",
+            f"CPI(YoY) {fmt_num(ind.get('cpi'), '%')}",
+            f"PPI(YoY) {fmt_num(ind.get('ppi'), '%')}",
+            f"실업률 {fmt_num(ind.get('unemployment'), '%')}",
         ],
     )
 
@@ -115,17 +115,17 @@ def build_messages(today_str: str, ind: dict, news: dict, earnings: list = None)
         name = e["name"]
         fin = e.get("financials") or {}
         verdict = e.get("revenue_verdict", "정보없음")
-        revenue_line = f"매출 {_usd_billions(fin.get('revenue'))}"
+        revenue_line = f"매출 {fmt_usd_billions(fin.get('revenue'))}"
         if verdict in ("상회", "하회"):
             revenue_line += f" (예상치 {verdict})"
         messages += pack_lines(
             f"■{name} 실적발표",
             [
                 revenue_line,
-                f"영업이익 {_usd_billions(fin.get('op_income'))}",
-                f"순이익 {_usd_billions(fin.get('net_income'))}",
-                f"EPS 실제 {_usd(fin.get('eps_actual'))} / 예상 {_usd(fin.get('eps_estimate'))}",
-                f"총부채 {_usd_billions(fin.get('debt'))}",
+                f"영업이익 {fmt_usd_billions(fin.get('op_income'))}",
+                f"순이익 {fmt_usd_billions(fin.get('net_income'))}",
+                f"EPS 실제 {fmt_usd(fin.get('eps_actual'))} / 예상 {fmt_usd(fin.get('eps_estimate'))}",
+                f"총부채 {fmt_usd_billions(fin.get('debt'))}",
             ],
         )
         call_summary = e.get("call_summary", "")

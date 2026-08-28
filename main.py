@@ -13,6 +13,7 @@ import indicators
 import kakao
 import news
 import summarize
+import webpage
 
 KST = ZoneInfo("Asia/Seoul")
 
@@ -81,6 +82,11 @@ def main():
     news_summaries = collect_news_summaries(start_utc, end_utc, gemini_key)
     earnings_reports = collect_earnings(start_utc, end_utc, gemini_key)
     messages = formatter.build_messages(today_str, ind, news_summaries, earnings_reports)
+
+    html_content = webpage.render_html(today_str, ind, news_summaries, earnings_reports)
+    os.makedirs("docs", exist_ok=True)
+    with open("docs/index.html", "w", encoding="utf-8") as f:
+        f.write(html_content)
 
     if args.dry_run:
         for i, m in enumerate(messages, 1):
