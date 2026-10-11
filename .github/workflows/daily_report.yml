@@ -1,4 +1,4 @@
-name: 주식 일일 시황 카톡 발송
+name: 주식 일일 시황 웹페이지 갱신
 
 # 2026-08-27: 목표 도착 시각을 09:00 KST -> 07:30 KST로 변경. 관측된 평균 지연
 # (~3시간20분)을 반영해 트리거를 19:10 UTC로 역산. cron 문자열을 바꿀 때마다
@@ -26,13 +26,8 @@ jobs:
 
       - run: python main.py
         env:
-          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
-          KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
-          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GH_PAT: ${{ secrets.GH_PAT }}
-          GH_REPO: ${{ github.repository }}
 
       - name: Publish web page
         run: |
